@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search - BudgetFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+
+    <!-- Navigation -->
+    <nav class="glass sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="dashboard.html"
+                    class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-blue-500">BudgetFlow</a>
+                <div class="hidden md:flex items-baseline space-x-4">
+                    <a href="dashboard.html"
+                        class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                    <a href="view_all.html"
+                        class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Transactions</a>
+                    <a href="create.html"
+                        class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Add Expense</a>
+                    <a href="search.html"
+                        class="bg-white/10 text-white px-3 py-2 rounded-md text-sm font-medium">Search</a>
+                    <a href="report.html"
+                        class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Reports</a>
+                </div>
+                <a href="#" id="logout-btn" class="text-red-400 hover:text-red-300 text-sm font-medium">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto space-y-8">
+
+            <!-- Search Controls -->
+            <div class="glass rounded-xl p-8">
+                <h2 class="text-2xl font-bold text-white mb-6">Filter Transactions</h2>
+                <form id="search-form" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Category</label>
+                        <select name="category_id" id="category_id"
+                            class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Start Date</label>
+                        <input type="date" name="start_date" id="start_date"
+                            class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">End Date</label>
+                        <input type="date" name="end_date" id="end_date"
+                            class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg shadow-lg shadow-blue-500/30 transition">
+                            Apply Filters
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results -->
+            <div id="results-container" class="hidden glass rounded-xl overflow-hidden p-8">
+                <h3 class="text-xl font-bold text-white mb-4">Results</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-gray-700">
+                                <th class="pb-3">Date</th>
+                                <th class="pb-3">Category</th>
+                                <th class="pb-3">Description</th>
+                                <th class="pb-3 text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body" class="divide-y divide-gray-700/50"></tbody>
+                        <tfoot>
+                            <tr class="bg-white/5 font-bold text-white">
+                                <td colspan="3" class="p-4 text-right">Total Found:</td>
+                                <td id="total-amount" class="p-4 text-right text-emerald-400">$0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <p id="no-results" class="hidden text-gray-500">No transactions found matching your criteria.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="glass mt-auto py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">&copy; 2026 BudgetFlow.</div>
+    </footer>
+
+    <script>
+        // Load categories
+        async function loadCategories() {
+            const response = await fetch('../api/transactions.php?action=categories');
+            const data = await response.json();
+            if (data.success) {
+                const select = document.getElementById('category_id');
+                data.data.forEach(cat => {
+                    select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                });
+            }
+        }
+
+        // Handle search
+        document.getElementById('search-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const category_id = document.getElementById('category_id').value;
+            const start_date = document.getElementById('start_date').value;
+            const end_date = document.getElementById('end_date').value;
+
+            const params = new URLSearchParams({ action: 'search' });
+            if (category_id) params.append('category_id', category_id);
+            if (start_date) params.append('start_date', start_date);
+            if (end_date) params.append('end_date', end_date);
+
+            const response = await fetch(`../api/transactions.php?${params}`);
+            const data = await response.json();
+
+            const container = document.getElementById('results-container');
+            const tbody = document.getElementById('results-body');
+            const noResults = document.getElementById('no-results');
+
+            container.classList.remove('hidden');
+
+            if (data.success && data.data.length > 0) {
+                noResults.classList.add('hidden');
+                tbody.parentElement.classList.remove('hidden');
+
+                let total = 0;
+                tbody.innerHTML = data.data.map(row => {
+                    total += parseFloat(row.amount);
+                    return `
+                        <tr>
+                            <td class="py-3 text-gray-300">${new Date(row.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                            <td><span class="text-sm text-blue-300">${row.category_name}</span></td>
+                            <td class="text-gray-400">${row.description || ''}</td>
+                            <td class="text-right font-bold text-white">$${parseFloat(row.amount).toFixed(2)}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                document.getElementById('total-amount').textContent = '$' + total.toFixed(2);
+            } else {
+                tbody.innerHTML = '';
+                noResults.classList.remove('hidden');
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async function (e) {
+            e.preventDefault();
+            await fetch('../api/logout.php');
+            window.location.href = 'login.html';
+        });
+
+        loadCategories();
+    </script>
+
+</body>
+
+</html>

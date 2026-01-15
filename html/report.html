@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Report - BudgetFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+
+    <!-- Navigation -->
+    <nav class="glass sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="dashboard.html"
+                    class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-blue-500">BudgetFlow</a>
+                <div class="hidden md:flex items-baseline space-x-4">
+                    <a href="dashboard.html"
+                        class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                    <a href="view_all.html"
+                        class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Transactions</a>
+                    <a href="create.html"
+                        class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Add Expense</a>
+                    <a href="search.html"
+                        class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Search</a>
+                    <a href="report.html"
+                        class="bg-white/10 text-white px-3 py-2 rounded-md text-sm font-medium">Reports</a>
+                </div>
+                <a href="#" id="logout-btn" class="text-red-400 hover:text-red-300 text-sm font-medium">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto space-y-8">
+            <div class="glass rounded-xl p-8">
+                <h2 class="text-2xl font-bold text-white mb-2">Financial Report</h2>
+                <p class="text-gray-400 mb-8">Comparison of Actual Spending vs. Planned Allocations</p>
+
+                <div id="report-container" class="space-y-8">
+                    <!-- Grand Total -->
+                    <div class="flex justify-between items-end border-b border-gray-700 pb-4">
+                        <span class="text-gray-400">Total Actual Spending</span>
+                        <span id="grand-total" class="text-4xl font-bold text-emerald-400">$0.00</span>
+                    </div>
+
+                    <!-- Category Breakdown -->
+                    <div id="categories-breakdown" class="space-y-6">
+                        <!-- Categories loaded via JavaScript -->
+                    </div>
+                </div>
+
+                <p id="no-data" class="hidden text-gray-500">No data available yet.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="glass mt-auto py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">&copy; 2026 BudgetFlow.</div>
+    </footer>
+
+    <script>
+        async function loadReport() {
+            const response = await fetch('../api/report.php');
+            const data = await response.json();
+
+            if (data.success) {
+                const { report, grand_total } = data.data;
+
+                document.getElementById('grand-total').textContent = '$' + parseFloat(grand_total).toFixed(2);
+
+                const container = document.getElementById('categories-breakdown');
+
+                if (report.length === 0) {
+                    document.getElementById('report-container').classList.add('hidden');
+                    document.getElementById('no-data').classList.remove('hidden');
+                } else {
+                    container.innerHTML = report.map(cat => {
+                        const percent = grand_total > 0 ? (cat.spent / grand_total) * 100 : 0;
+                        return `
+                            <div class="bg-white/5 rounded-lg p-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="text-lg font-bold text-white">${cat.category_name}</h3>
+                                </div>
+                                
+                                <div class="grid grid-cols-3 gap-4 mb-2">
+                                    <div>
+                                        <span class="block text-xs text-gray-500 uppercase">Actual Spent</span>
+                                        <span class="text-lg font-mono text-white">$${parseFloat(cat.spent).toFixed(2)}</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-xs text-gray-500 uppercase">Active Plan</span>
+                                        <span class="text-lg font-mono text-blue-300">$${parseFloat(cat.planned).toFixed(2)}</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-xs text-gray-500 uppercase text-red-300/70">Removed (Loss)</span>
+                                        <span class="text-lg font-mono text-red-400">$${parseFloat(cat.removed).toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Visual Bar -->
+                                <div class="relative w-full bg-slate-800 rounded-full h-2">
+                                    <div class="absolute top-0 left-0 h-2 rounded-full bg-emerald-500 z-10" style="width: ${Math.min(percent, 100)}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async function (e) {
+            e.preventDefault();
+            await fetch('../api/logout.php');
+            window.location.href = 'login.html';
+        });
+
+        loadReport();
+    </script>
+
+</body>
+
+</html>
