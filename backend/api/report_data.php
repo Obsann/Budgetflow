@@ -1,21 +1,9 @@
 <?php
 // backend/api/report_data.php
-require_once '../includes/auth_check.php';
-if (session_status() === PHP_SESSION_NONE) session_start();
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit();
-}
+require_once '../includes/middleware.php';
+// Middleware: starts session, sets headers, includes db, functions
 
-require_once '../includes/db.php';
-require_once '../includes/functions.php';
-
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); 
-header('Access-Control-Allow-Credentials: true');
-
-$user_id = $_SESSION['user_id'];
+$user_id = require_auth(); // Report is read-only, no CSRF
 
 try {
     // 1. Fetch Actual Spending (Transactions)
@@ -42,7 +30,6 @@ try {
 
     // 3. Merge Data
     $report_data = [];
-    $cat_names = [];
     $grand_total = 0;
 
     foreach ($spending_data as $row) {
@@ -66,13 +53,13 @@ try {
     echo json_encode([
         'success' => true,
         'data' => [
-            'report' => array_values($report_data), // Convert to array list
+            'report' => array_values($report_data),
             'grand_total' => $grand_total
         ]
     ]);
 
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => 'Database error']);
 }
 ?>

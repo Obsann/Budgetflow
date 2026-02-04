@@ -1,23 +1,9 @@
 <?php
 // backend/api/dashboard.php
-require_once '../includes/auth_check.php'; // Ensure this returns JSON error if not auth
-// wait, auth_check.php redirects. We need to modify it or handle it.
-// Actually, let's just check session here for now or update auth_check.php later.
-if (session_status() === PHP_SESSION_NONE) session_start();
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit();
-}
+require_once '../includes/middleware.php';
+// Middleware: starts session, sets headers, includes db, functions
 
-require_once '../includes/db.php';
-require_once '../includes/functions.php';
-
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); 
-header('Access-Control-Allow-Credentials: true');
-
-$user_id = $_SESSION['user_id'];
+$user_id = require_auth(); // Dashboard is read-only, no CSRF needed for GET
 
 // 1. Fetch Categories
 $categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();

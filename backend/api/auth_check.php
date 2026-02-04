@@ -1,10 +1,14 @@
 <?php
 // backend/api/auth_check.php
-session_start();
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); 
-header('Access-Control-Allow-Credentials: true');
+require_once '../includes/middleware.php';
+// Note: middleware.php starts session, includes functions.php (which has generate_csrf_token)
 
 $authenticated = isset($_SESSION['user_id']);
-echo json_encode(['authenticated' => $authenticated]);
+$response = ['authenticated' => $authenticated];
+
+if ($authenticated) {
+    $response['csrf_token'] = generate_csrf_token();
+}
+
+echo json_encode($response);
 ?>

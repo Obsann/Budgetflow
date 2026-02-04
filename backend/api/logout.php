@@ -1,10 +1,10 @@
 <?php
 // backend/api/logout.php
-session_start();
+require_once '../includes/middleware.php';
+// Middleware: starts session, sets headers
+
 session_unset();
 session_destroy();
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); // For dev
-header('Access-Control-Allow-Credentials: true');
-echo json_encode(['success' => true]);
+
+echo json_encode(['success' => true, 'message' => 'Logged out']);
 ?>

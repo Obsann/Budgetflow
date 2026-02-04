@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Transactions - BudgetFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+
+    <div id="header-placeholder"></div>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto space-y-8">
+
+            <!-- Search Controls -->
+            <div class="glass rounded-xl p-8">
+                <h2 class="text-2xl font-bold text-white mb-6">Filter Transactions</h2>
+                <form id="search-form" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                    <div class="md:col-span-1">
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Category</label>
+                        <select id="category_id"
+                            class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Start Date</label>
+                        <input type="date" id="start_date"
+                            class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">End Date</label>
+                        <input type="date" id="end_date"
+                            class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg shadow-lg shadow-blue-500/30 transition">
+                            Apply Filters
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results -->
+            <div id="results-section" class="hidden glass rounded-xl overflow-hidden p-8">
+                <h3 class="text-xl font-bold text-white mb-4">Results</h3>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-gray-700">
+                                <th class="pb-3">Date</th>
+                                <th class="pb-3">Category</th>
+                                <th class="pb-3">Description</th>
+                                <th class="pb-3 text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body" class="divide-y divide-gray-700/50">
+                            <!-- Rows rendered here -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-white/5 font-bold text-white">
+                                <td colspan="3" class="p-4 text-right">Total Found:</td>
+                                <td class="p-4 text-right text-emerald-400" id="total-amount">0.00 ETB</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <p id="no-results" class="hidden text-gray-500">No transactions found matching your criteria.</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script src="js/header.js"></script>
+    <script src="js/footer.js"></script>
+    <script>
+        checkAuth();
+
+        // Load categories on page load
+        async function loadCategories() {
+            const result = await apiFetch('dashboard.php');
+            if (result.ok && result.data.success) {
+                const select = document.getElementById('category_id');
+                select.innerHTML = '<option value="">All Categories</option>' +
+                    result.data.data.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            }
+        }
+
+        async function performSearch(e) {
+            e.preventDefault();
+
+            const category_id = document.getElementById('category_id').value;
+            const start_date = document.getElementById('start_date').value;
+            const end_date = document.getElementById('end_date').value;
+
+            let url = `transactions.php?limit=500`;
+            if (category_id) url += `&category_id=${category_id}`;
+            if (start_date) url += `&start_date=${start_date}`;
+            if (end_date) url += `&end_date=${end_date}`;
+
+            const result = await apiFetch(url);
+
+            document.getElementById('results-section').classList.remove('hidden');
+            const tbody = document.getElementById('results-body');
+            const noResults = document.getElementById('no-results');
+
+            if (result.ok && result.data.success && result.data.data.length > 0) {
+                noResults.classList.add('hidden');
+                let total = 0;
+
+                tbody.innerHTML = result.data.data.map(row => {
+                    total += parseFloat(row.amount);
+                    const date = new Date(row.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    return `
+                        <tr>
+                            <td class="py-3 text-gray-300">${date}</td>
+                            <td><span class="text-sm text-blue-300">${row.category_name}</span></td>
+                            <td class="text-gray-400">${row.description || '-'}</td>
+                            <td class="text-right font-bold text-white">${parseFloat(row.amount).toFixed(2)} ETB</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                document.getElementById('total-amount').textContent = `${total.toFixed(2)} ETB`;
+            } else {
+                tbody.innerHTML = '';
+                document.getElementById('total-amount').textContent = '0.00 ETB';
+                noResults.classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('search-form').addEventListener('submit', performSearch);
+        loadCategories();
+    </script>
+</body>
+
+</html>

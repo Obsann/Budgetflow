@@ -28,4 +28,45 @@ function display_error($errors, $field) {
     }
     return '';
 }
+/**
+ * Generate CSRF Token
+ */
+function generate_csrf_token() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Verify CSRF Token
+ */
+function verify_csrf_token($token) {
+    if (!isset($_SESSION['csrf_token']) || empty($token)) {
+        return false;
+    }
+    return hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/**
+ * Validate Email
+ */
+function validate_email($email) {
+    return filter_var($email, FILTER_VALIDATE_EMAIL);
+}
+
+/**
+ * Validate Amount
+ */
+function validate_amount($amount) {
+    return is_numeric($amount) && $amount >= 0;
+}
+
+/**
+ * Validate Date
+ */
+function validate_date($date) {
+    $d = DateTime::createFromFormat('Y-m-d', $date);
+    return $d && $d->format('Y-m-d') === $date;
+}
 ?>

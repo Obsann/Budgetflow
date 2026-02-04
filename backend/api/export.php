@@ -1,16 +1,9 @@
 <?php
 // backend/api/export.php
-require_once '../includes/auth_check.php';
-require_once '../includes/db.php';
-require_once '../includes/functions.php';
+require_once '../includes/middleware.php';
+// Middleware: starts session, sets headers, includes db, functions
 
-if (session_status() === PHP_SESSION_NONE) session_start();
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    exit('Unauthorized');
-}
-
-$user_id = $_SESSION['user_id'];
+$user_id = require_auth(); // Export is read-only, no CSRF
 
 // Fetch transactions
 $stmt = $pdo->prepare("
@@ -23,7 +16,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$user_id]);
 $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Headers for download
+// Override JSON header for CSV
 header('Content-Type: text/csv');
 header('Content-Disposition: attachment; filename="budgetflow_transactions_' . date('Y-m-d') . '.csv"');
 

@@ -25,24 +25,9 @@
 
 <body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
 
-    <nav class="glass sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center">
-                    <span
-                        class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-blue-500">
-                        BudgetFlow
-                    </span>
-                </div>
-                <div>
-                    <button id="logout-btn"
-                        class="text-red-400 hover:text-red-300 text-sm font-medium transition">Logout</button>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <div id="header-placeholder"></div>
 
-    <main class="flex-grow container mx-auto px-4 py-8 space-y-8">
+    <main class="flex-grow container mx-auto px-4 py-8">
         <!-- Overview Cards -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 space-y-8">
@@ -67,10 +52,32 @@
             <!-- Add New & Chart -->
             <div class="space-y-8">
                 <!-- Form -->
+                <!-- Form -->
                 <div class="rounded-2xl glass p-6">
-                    <h3 class="text-lg font-semibold text-white mb-4">Add Allocation (Demo)</h3>
-                    <p class="text-gray-400 italic text-sm">Full allocation management coming in full implementation.
-                    </p>
+                    <h3 class="text-lg font-semibold text-white mb-4">Add Allocation</h3>
+                    <form id="alloc-form" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">Task Name</label>
+                            <input type="text" id="alloc_name" placeholder="e.g. Rent" required
+                                class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">Amount (ETB)</label>
+                            <input type="number" step="0.01" id="alloc_amount" placeholder="0.00" required
+                                class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">Category (Optional)</label>
+                            <select id="alloc_category"
+                                class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-3 rounded-lg shadow-lg shadow-indigo-500/20 transition transform hover:scale-[1.02]">
+                            Split Income
+                        </button>
+                    </form>
                 </div>
 
                 <!-- Chart -->
@@ -82,19 +89,23 @@
     </main>
 
     <script src="js/app.js"></script>
+    <script src="js/header.js"></script>
+    <script src="js/footer.js"></script>
     <script>
         checkAuth(); // Redirect if not logged in
-
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            const res = await apiFetch('logout.php');
-            if (res.ok) window.location.href = 'login.html';
-        });
 
         async function loadDashboard() {
             const res = await apiFetch('dashboard.php');
             if (!res.ok) return;
 
-            const { income, allocation_total, allocations, chart_data } = res.data.data;
+            const { income, allocation_total, allocations, chart_data, categories } = res.data.data;
+
+            // Load Categories into Add Form
+            const catSelect = document.getElementById('alloc_category');
+            if (catSelect && catSelect.children.length <= 1) { // Only load if not already loaded
+                catSelect.innerHTML = '<option value="">No Category</option>' +
+                    categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            }
 
             // Update Text
             const remain = parseFloat(income) - parseFloat(allocation_total);
@@ -103,33 +114,100 @@
             // Render List
             const list = document.getElementById('allocations-list');
             list.innerHTML = allocations.map(item => `
-                <div class="rounded-xl glass p-4 flex justify-between items-center">
-                    <div>
-                        <p class="font-medium text-white">${item.name}</p>
-                        <p class="text-sm text-gray-400">${parseFloat(item.amount).toFixed(2)} ETB</p>
+                <div class="rounded-xl glass p-4 flex justify-between items-center group transition hover:bg-white/5">
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleAllocation(${item.id})" class="flex-shrink-0">
+                            ${item.is_paid == 1
+                    ? '<div class="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>'
+                    : '<div class="w-6 h-6 rounded-full border-2 border-gray-500 group-hover:border-emerald-400 transition"></div>'
+                }
+                        </button>
+                        <div>
+                            <p class="font-medium ${item.is_paid == 1 ? 'text-gray-500 line-through decoration-emerald-500/50' : 'text-white'} transition-all">${item.name}</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-400 font-mono">${parseFloat(item.amount).toFixed(2)} ETB</span>
+                                ${item.category_name
+                    ? `<span class="text-xs text-blue-300 bg-blue-900/30 px-2 py-0.5 rounded">${item.category_name}</span>`
+                    : ''
+                }
+                            </div>
+                        </div>
                     </div>
-                    <span class="text-xs text-blue-300 bg-blue-900/30 px-2 py-1 rounded">
-                        ${item.category_name || 'No Category'}
-                    </span>
+                    <button onclick="deleteAllocation(${item.id})" class="text-gray-600 hover:text-red-400 transition p-2 opacity-0 group-hover:opacity-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
                 </div>
             `).join('') || '<p class="text-gray-500">No allocations found.</p>';
 
             // Render Chart
-            const ctx = document.getElementById('expensesChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: chart_data.map(d => d.name),
-                    datasets: [{
-                        data: chart_data.map(d => d.total),
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
-            });
+            const ctx = document.getElementById('expensesChart');
+            const chartContainer = ctx.parentElement;
+
+            // Remove existing no-data message if any
+            const existingMsg = chartContainer.querySelector('.no-data-msg');
+            if (existingMsg) existingMsg.remove();
+
+            if (window.myChart) window.myChart.destroy();
+
+            if (chart_data.length === 0) {
+                ctx.style.display = 'none';
+                const msg = document.createElement('div');
+                msg.className = 'no-data-msg text-gray-500 text-center py-10';
+                msg.innerHTML = '<p>No expenses recorded yet.</p><p class="text-xs mt-1">Add an expense to see the breakdown.</p>';
+                chartContainer.appendChild(msg);
+            } else {
+                ctx.style.display = 'block';
+                window.myChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: chart_data.map(d => d.name),
+                        datasets: [{
+                            data: chart_data.map(d => d.total),
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1', '#ec4899', '#14b8a6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
         }
 
+        // --- Allocation Actions ---
+
+        async function createAllocation(e) {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('alloc_name').value,
+                amount: document.getElementById('alloc_amount').value,
+                category_id: document.getElementById('alloc_category').value
+            };
+
+            const res = await apiFetch('allocations.php', { method: 'POST', body: JSON.stringify(data) });
+            if (res.ok && res.data.success) {
+                document.getElementById('alloc-form').reset();
+                loadDashboard();
+            } else {
+                alert(res.data.error || 'Failed to add');
+            }
+        }
+
+        async function toggleAllocation(id) {
+            const res = await apiFetch('allocations.php', { method: 'PUT', body: JSON.stringify({ id }) });
+            if (res.ok) loadDashboard();
+        }
+
+        async function deleteAllocation(id) {
+            if (!confirm("Remove this setup?")) return;
+            const res = await apiFetch(`allocations.php?id=${id}`, { method: 'DELETE' });
+            if (res.ok) loadDashboard();
+        }
+
+        document.getElementById('alloc-form').addEventListener('submit', createAllocation);
         loadDashboard();
     </script>
 </body>
