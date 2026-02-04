@@ -2,10 +2,10 @@
 // includes/db.php
 // Database connection using PDO
 
-$host = 'localhost';
-$db   = 'budgetflow_db'; // Ensure this database exists or change to your local DB name
-$user = 'root';        // Default XAMPP/WAMP user
-$pass = '';            // Default XAMPP/WAMP password
+$host = getenv('DB_HOST') ?: 'localhost';
+$db   = getenv('DB_NAME') ?: 'budgetflow_db';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";

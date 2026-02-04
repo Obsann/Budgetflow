@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BudgetFlow - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+
+    <nav class="glass sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span
+                        class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-blue-500">
+                        BudgetFlow
+                    </span>
+                </div>
+                <div>
+                    <button id="logout-btn"
+                        class="text-red-400 hover:text-red-300 text-sm font-medium transition">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto px-4 py-8 space-y-8">
+        <!-- Overview Cards -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Info Card -->
+                <div class="relative overflow-hidden rounded-2xl glass p-8">
+                    <h2 class="text-gray-400 text-sm font-semibold uppercase tracking-wider">Remaining Unallocated
+                        Income</h2>
+                    <div class="mt-2 flex items-baseline">
+                        <span class="text-4xl font-bold text-white" id="remaining-display">0.00 ETB</span>
+                    </div>
+                </div>
+
+                <!-- Allocations List -->
+                <div>
+                    <h2 class="text-xl font-bold text-white mb-4">Allocations</h2>
+                    <div id="allocations-list" class="grid gap-4">
+                        <!-- Items rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add New & Chart -->
+            <div class="space-y-8">
+                <!-- Form -->
+                <div class="rounded-2xl glass p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">Add Allocation (Demo)</h3>
+                    <p class="text-gray-400 italic text-sm">Full allocation management coming in full implementation.
+                    </p>
+                </div>
+
+                <!-- Chart -->
+                <div class="rounded-2xl glass p-6">
+                    <canvas id="expensesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        checkAuth(); // Redirect if not logged in
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            const res = await apiFetch('logout.php');
+            if (res.ok) window.location.href = 'login.html';
+        });
+
+        async function loadDashboard() {
+            const res = await apiFetch('dashboard.php');
+            if (!res.ok) return;
+
+            const { income, allocation_total, allocations, chart_data } = res.data.data;
+
+            // Update Text
+            const remain = parseFloat(income) - parseFloat(allocation_total);
+            document.getElementById('remaining-display').textContent = `${remain.toFixed(2)} ETB`;
+
+            // Render List
+            const list = document.getElementById('allocations-list');
+            list.innerHTML = allocations.map(item => `
+                <div class="rounded-xl glass p-4 flex justify-between items-center">
+                    <div>
+                        <p class="font-medium text-white">${item.name}</p>
+                        <p class="text-sm text-gray-400">${parseFloat(item.amount).toFixed(2)} ETB</p>
+                    </div>
+                    <span class="text-xs text-blue-300 bg-blue-900/30 px-2 py-1 rounded">
+                        ${item.category_name || 'No Category'}
+                    </span>
+                </div>
+            `).join('') || '<p class="text-gray-500">No allocations found.</p>';
+
+            // Render Chart
+            const ctx = document.getElementById('expensesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: chart_data.map(d => d.name),
+                    datasets: [{
+                        data: chart_data.map(d => d.total),
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+            });
+        }
+
+        loadDashboard();
+    </script>
+</body>
+
+</html>
