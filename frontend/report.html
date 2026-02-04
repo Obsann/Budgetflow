@@ -81,8 +81,8 @@
                             <h3 class="text-lg font-bold text-white mb-2">${item.cat_name}</h3>
                             <div class="grid grid-cols-3 gap-4 mb-2">
                                 <div><span class="block text-xs text-gray-500 uppercase">Actual Spent</span><span class="text-lg font-mono text-white">${parseFloat(item.spent).toFixed(2)} ETB</span></div>
-                                <div><span class="block text-xs text-gray-500 uppercase">Active Plan</span><span class="text-lg font-mono text-blue-300">${parseFloat(item.planned).toFixed(2)} ETB</span></div>
-                                <div><span class="block text-xs text-gray-500 uppercase text-red-300/70">Removed (Loss)</span><span class="text-lg font-mono text-red-400">${parseFloat(item.removed).toFixed(2)} ETB</span></div>
+                                <div><span class="block text-xs text-gray-500 uppercase">Planned Budget</span><span class="text-lg font-mono text-blue-300">${parseFloat(item.planned).toFixed(2)} ETB</span></div>
+                                <div><span class="block text-xs text-gray-500 uppercase text-red-300/70">Diff (Spending vs Plan)</span><span class="text-lg font-mono text-red-400">${(parseFloat(item.planned) - parseFloat(item.spent)).toFixed(2)} ETB</span></div>
                             </div>
                             <div class="relative w-full bg-slate-800 rounded-full h-2">
                                 <div class="absolute top-0 left-0 h-2 rounded-full bg-emerald-500 z-10" style="width: ${Math.min(percent, 100)}%"></div>
