@@ -21,7 +21,7 @@ require_once '../includes/functions.php';
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *'); 
 header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -103,6 +103,33 @@ elseif ($method === 'DELETE') {
         $stmt = $pdo->prepare("DELETE FROM transactions WHERE id = ? AND user_id = ?");
         $stmt->execute([$id, $user_id]);
         echo json_encode(['success' => true, 'message' => 'Transaction deleted']);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+}
+
+// PUT: Update
+elseif ($method === 'PUT') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    $id = isset($data['id']) ? (int)$data['id'] : 0;
+    $amount = clean_input($data['amount'] ?? '');
+    $description = clean_input($data['description'] ?? '');
+    $category_id = clean_input($data['category_id'] ?? '');
+    $date = clean_input($data['date'] ?? date('Y-m-d'));
+
+    if ($id <= 0 || empty($amount) || !is_numeric($amount)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Invalid data']);
+        exit();
+    }
+
+    try {
+        $sql = "UPDATE transactions SET category_id = ?, amount = ?, description = ?, transaction_date = ? WHERE id = ? AND user_id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$category_id, $amount, $description, $date, $id, $user_id]);
+        echo json_encode(['success' => true, 'message' => 'Transaction updated']);
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
