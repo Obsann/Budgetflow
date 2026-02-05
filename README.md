@@ -1,6 +1,67 @@
 # 💼 BudgetFlow
 
 **A Personal Budget & Expense Tracking Web App (PHP + MySQL)**
+<<<<<<< HEAD
+=======
+
+BudgetFlow is a **student-friendly expense tracker** that helps users record, manage, search, and export their budgets using a local PHP/MySQL stack. It’s designed for clarity, practical database interaction, and foundational web application structure — ideal for portfolios, internships, and early backend engineering roles.
+
+---
+
+## 🚀 Overview
+
+BudgetFlow solves a common personal finance challenge: **tracking income and expenses over time in a simple web UI**.
+
+It demonstrates:
+- User authentication and session handling
+- CRUD operations on expense entries
+- Report generation and CSV export
+- Interaction with a relational database (MySQL)
+
+This project highlights practical use of **core backend technologies** without external frameworks.
+
+---
+
+## 🧠 Features
+
+- **User registration and login**  
+  Secure session-based authentication.
+
+- **Add / view / update / delete expenses**  
+  Full CRUD functionality for expense records.
+
+- **Search and filtering**  
+  Filter expenses based on keywords or dates.
+
+- **Report export**  
+  Download expense reports for offline use.
+
+- **Responsive UI skeleton**  
+  Basic styling to support usability.
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | PHP (Vanilla) |
+| Database | MySQL |
+| Frontend | HTML, CSS |
+| Server | XAMPP / WAMP / MAMP |
+| Version control | Git + GitHub |
+
+---
+
+## 📥 Installation
+
+### Setup Instructions
+
+1. **Clone the repository**
+
+   ```sh
+   git clone https://github.com/Obsann/Budgetflow.git
+>>>>>>> 7310a829ee246569a0de980013aad71663049881
 
 BudgetFlow is a **student-friendly expense tracker** that helps users record, manage, search, and export their budgets using a local PHP/MySQL stack. It’s designed for clarity, practical database interaction, and foundational web application structure — ideal for portfolios, internships, and early backend engineering roles.
 
