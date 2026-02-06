@@ -21,8 +21,8 @@ const Dashboard = () => {
                     setData(result.data);
                 }
             } catch (err) {
-                setError('Failed to load dashboard data');
                 console.error(err);
+                setError(err.response?.data?.message || err.message || 'Failed to load dashboard data');
             } finally {
                 setLoading(false);
             }
