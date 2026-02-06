@@ -1,0 +1,11 @@
+User Count: 1
+Users found in DB:
+[
+  {
+    "_id": "6984e77af238306315e57580",
+    "username": "Obsann",
+    "email": "obsanhabtamu0@gmail.com",
+    "createdAt": "2026-02-05T18:54:50.505Z",
+    "__v": 0
+  }
+]
