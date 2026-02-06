@@ -6,7 +6,7 @@ const BudgetAllocation = require('../models/BudgetAllocation');
 // @access  Private
 exports.getDashboard = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
 
         // Get current month range
         const now = new Date();

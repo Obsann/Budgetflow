@@ -7,6 +7,7 @@ const Reports = () => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
+    const [error, setError] = useState('');
 
     const [filters, setFilters] = useState({
         startDate: '',
@@ -33,11 +34,13 @@ const Reports = () => {
 
     const fetchReport = async () => {
         setLoading(true);
+        setError('');
         try {
             const result = await reportService.getData(filters);
             if (result.success) setData(result.data);
         } catch (err) {
-            console.error('Failed to load report');
+            console.error('Failed to load report:', err);
+            setError('Failed to load report data');
         } finally {
             setLoading(false);
         }
@@ -130,6 +133,8 @@ const Reports = () => {
                     </div>
                 </div>
             </div>
+
+            {error && <div className="alert alert-error">{error}</div>}
 
             {loading ? (
                 <div className="loading-container"><div className="spinner"></div></div>

@@ -16,7 +16,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://budgetflow-524f.vercel.app/"
+      "https://budgetflow-524f.vercel.app"
     ],
     credentials: true
   })
